@@ -1,0 +1,29 @@
+
+
+.sudoku,
+.sudoku__cell {
+	border:1px solid #ccc;
+}
+
+.sudoku {
+	width:360px;
+	height:360px;
+	border-bottom-width:0;
+	border-right-width:0;
+}
+
+.sudoku__cell {
+	width:39px;
+	height:39px;
+	float:left;
+	border-top-width:0;
+	border-left-width:0;
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 20px;
+	text-align: center;
+	line-height: 39px;
+}
+
+.sudoku__cell--prefilled {
+	background:#F1F1F1;
+}
