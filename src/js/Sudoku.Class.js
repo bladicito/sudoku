@@ -1,17 +1,6 @@
 (function (window, Sudoku) {
-
-
-
 	'use strict';
 
-	/**
-	 *
-	 * @class Solver
-	 * @namespace Sudoku
-	 * @constructor
-	 *
-	 * __classDescription__
-	 */
 	function Solver($element) {
 		this.init($element);
 	}
@@ -29,11 +18,14 @@
 
 			this.numbers = [];
 			this.result = [];
+			this.currentX = 0;
+			this.currentY = 0;
+			this.currentGridx3X = 0;
+			this.currentGridx3Y = 0;
 
 		},
 
 		getFields: function () {
-
 
 			var lenRows = 9,
 				lenCells = 9
@@ -62,167 +54,245 @@
 		},
 
 
+
+
+
+
 		control: function () {
-			var x,
-				y,
-				somethingFound = false
-			;
+			var x, y, some = false;
 
 
 			for (x = 0; x < this.numbers.length; x = x + 1) {
-				if (!somethingFound) {
+				if (!some) {
 					for (y = 0; y < this.numbers.length; y = y + 1){
-						var currentNumber = this.numbers[x][y];
-						if (currentNumber === 0) {
-							var success = this.checkOnGrids(x, y);
+						this.currentX = x;
+						this.currentY = y;
 
-							if (success) {
 
-								somethingFound = true;
+						if (this.numbers[x][y] === 0) {
+
+							this.setCurrent9x9Grid ();
+							if (this.checkNumber(x, y)) {
+								some = true;
 								break;
 							}
 						}
 					}
-				}
-
-				if (somethingFound) {
-
+				} else {
 					break;
 				}
+
 			}
+
 
 			var that = this;
+
+
+
 			setTimeout(function() {
-
-				var again = false;
-				for (var x = 0; x < 9; x++) {
-					if (that.numbers[x].indexOf(0) !== 0) {
-						again  = true;
+				var cont = false;
+				for (x = 0; x < 9; x++) {
+					if (that.numbers[x].indexOf(0) !== -1) {
+						cont = true;
 						break;
-					} else {
-						again = false;
-					}
+					} ;
 				}
 
-				if (again) {
-					console.log('next try');
+				if(cont) {
+
 					that.control();
-				} else {
-					alert('done');
-				}
+				};
+			}, 100)
 
-			},300)
+
+
 
 		},
 
+		setCurrent9x9Grid: function() {
 
-		checkOnGrids : function(x, y) {
-			var i, k, k, possibleNumbers, somethingFound = false;
-			for (i = 0; i < 3; i = i + 1) {
-				if(!somethingFound) {
-					for (k = 0; k < 3; k = k + 1) {
-						possibleNumbers = this.getPossibleNumbers(i, k);
-						somethingFound = this.trying(possibleNumbers, x, y);
 
-						if(somethingFound) {
-							break;
-						}
-					}
-				} else {
-					break;
+				if (this.currentX < 3) {
+					this.currentGridx3X  =  0;
+				} else if (this.currentX >= 3  && this.currentX < 6) {
+					this.currentGridx3X = 1;
+				} else if (this.currentX >= 6 && this.currentX < 9) {
+					this.currentGridx3X  = 2;
 				}
 
 
-			}
 
-			return somethingFound;
+				if (this.currentY < 3) {
+					this.currentGridx3Y =  0;
+				} else if (this.currentY >= 3  && this.currentY < 6) {
+					this.currentGridx3Y =  1;
+				} else if (this.currentY >= 6 && this.currentY < 9) {
+					this.currentGridx3Y =  2;
+				}
 
+			return this;
 		},
 
-		trying : function(possibleNumbers, x, y) {
-			var j,
-				somethingFound = false
+		checkNumber: function(x, y) {
+			var possibleNumbers,
+				isPossible
 			;
 
-			console.log(possibleNumbers);
-			for (j = 0; j < possibleNumbers.length; j++) {
-				var success = this.tryToFindNumber(possibleNumbers[j], x, y);
-				if (success) {
+			possibleNumbers = this.getPossibleNumbers();
 
 
 
-					this.writeNumber(possibleNumbers[j], x, y);
-					this.numbers[x][y] = possibleNumbers[j];
-					somethingFound = true;
-					break;
+			isPossible =  this.checkPossibilities(possibleNumbers, x,y);
+
+
+			return isPossible;
+
+
+		},
+
+		checkPossibilities: function(possibleNumbers, x, y) {
+			var k,
+				results
+			;
+
+
+
+			for (k = 0; k < possibleNumbers.length; k = k+1) {
+				results = this.tryToFindNumber(possibleNumbers[k]);
+
+
+
+				if (results.length === 1) {
+					this.writeNumber(possibleNumbers[k], results[0].x, results[0].y );
+					this.numbers[results[0].x][results[0].y] = possibleNumbers[k];
+					return true;
 				}
+
+
+
 			}
 
-			return somethingFound;
+			return false;
+
 
 		},
 
 
-		tryToFindNumber: function(number, x, y) {
-			var successHorizontally = this.controlHorizontally(number, x);
-			if (successHorizontally) {
-				var successVertically = this.controlVertically(number, y);
-				if (successVertically) {
-					return true;
-				} else {
-					return false;
-				}
+
+		controlHorizontally: function (numberToControl, row) {
+
+
+			if (this.numbers[row].indexOf(numberToControl) === -1) {
+				return true
 			} else {
 				return false;
 			}
 
+
 		},
 
+		tryToFindNumber: function(number) {
+
+			var startX = parseInt(this.currentGridx3X * 3, 10),
+				startY = parseInt(this.currentGridx3Y * 3, 10),
+				results = [];
+			;
 
 
-		writeNumber: function(number, x, y) {
 
-			console.log('wrote number ' + number + ' in (' + x +',' + y + ')' );
-			var id = ''+ x +'' + '-' + y;
-			document.getElementById(id).innerHTML = number;
-			document.getElementById(id).className += ' added';
 
-			return true;
-		},
-
-		controlHorizontally: function (numberToControl, row) {
-			if (this.numbers[row].indexOf(numberToControl) !== 0 && this.numbers[row].indexOf(numberToControl) === -1) {
-				return true
+			if (this.numbers[startX][startY] === 0) {
+				if (this.controlHorizontally(number, startX)) {
+					if (this.controlVertically(number, (startY + 1))) {
+						results.push({x:startX, y: startY });
+					}
+				}
 			}
 
-			return false;
+			if (this.numbers[startX][(startY + 1)] === 0) {
+				if (this.controlHorizontally(number, startX)) {
+					if (this.controlVertically(number, (startY + 1))) {
+						results.push({x:startX, y: (startY + 1) });
+					}
+				}
+			}
 
-		},
-
-		controlVertically: function (numberToControl, cell) {
-
-			var tmp = [];
-
-			for (var x = 0; x < this.numbers.length; x++) {
-				tmp.push(this.numbers[x][cell]);
+			if (this.numbers[startX][(startY + 2)] === 0) {
+				if (this.controlHorizontally(number, startX)) {
+					if (this.controlVertically(number, (startY + 2))) {
+						results.push({x:startX, y: (startY + 2) });
+					}
+				}
 			}
 
 
 
-			if (tmp.indexOf(numberToControl) === -1) {
-				return true;
-			}
-			return false;
 
+			if (this.numbers[(startX + 1)][startY] === 0) {
+				if (this.controlHorizontally(number, startX + 1)) {
+					if (this.controlVertically(number, startY)) {
+						results.push({x:(startX + 1), y: startY });
+					}
+				}
+			}
+
+
+
+
+			if (this.numbers[(startX + 1)][(startY + 1)] === 0) {
+				if (this.controlHorizontally(number, (startX + 1))) {
+					if (this.controlVertically(number, (startY + 1))) {
+						results.push({x:(startX + 1), y: (startY + 1) });
+					}
+				}
+			}
+
+			if (this.numbers[(startX + 1)][(startY + 2)] === 0) {
+				if (this.controlHorizontally(number, (startX + 1))) {
+					if (this.controlVertically(number, (startY + 2))) {
+						results.push({x:(startX + 1), y: (startY + 2) });
+					}
+				}
+			}
+
+
+			if (this.numbers[(startX + 2)][startY] === 0) {
+				if (this.controlHorizontally(number, (startX + 2))) {
+					if (this.controlVertically(number, startY)) {
+						results.push({x:(startX + 2), y: startY });
+					}
+				}
+			}
+
+			if (this.numbers[(startX + 2)][(startY + 1)] === 0) {
+				if (this.controlHorizontally(number, (startX + 2))) {
+					if (this.controlVertically(number, (startY + 1))) {
+						results.push({x:(startX + 2), y: (startY + 1) });
+					}
+				}
+			}
+
+			if (this.numbers[(startX + 2)][(startY + 2)] === 0) {
+				if (this.controlHorizontally(number, (startX + 2))) {
+					if (this.controlVertically(number, (startY + 2))) {
+						results.push({x:(startX + 2), y: (startY + 2) });
+					}
+				}
+			}
+
+
+			return results;
 		},
 
-		getPossibleNumbers: function (gridX, gridY) {
 
-			var startX = gridX * 3,
-				startY = gridY * 3,
+
+		getPossibleNumbers: function () {
+
+			var startX = this.currentGridx3X * 3,
+				startY = this.currentGridx3Y * 3,
 				tmp = [],
 				tmp2 = []
-			;
+				;
 
 			tmp.push(this.numbers[startX][startY]);
 			tmp.push(this.numbers[startX][startY + 1]);
@@ -244,9 +314,46 @@
 
 
 			return tmp2;
+		},
 
+
+
+
+
+
+
+
+
+		writeNumber: function(number, x, y) {
+
+			console.log('wrote number ' + number + ' in (' + x +',' + y + ')' );
+			var id = ''+ x +'' + '-' + y;
+			document.getElementById(id).innerHTML = number;
+			document.getElementById(id).className += ' added';
+
+			return true;
+		},
+
+
+
+		controlVertically: function (numberToControl, cell) {
+
+			var tmp = [];
+
+			for (var x = 0; x < this.numbers.length; x++) {
+				tmp.push(this.numbers[x][cell]);
+			}
+
+
+
+			if (tmp.indexOf(numberToControl) === -1) {
+				return true;
+			}
+			return false;
 
 		}
+
+
 
 
 	};
